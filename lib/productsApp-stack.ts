@@ -37,7 +37,7 @@ export class ProductsAppStack extends cdk.Stack {
             },
             environment: {
                 PRODUCTS_DDB: this.productsDdb.tableName,
-            }
+            },
         });
 
         this.productsDdb.grantReadData(this.productsFetchHandler)
