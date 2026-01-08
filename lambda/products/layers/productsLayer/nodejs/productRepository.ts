@@ -34,19 +34,15 @@ export class ProductRepository {
         return result.Item as Product || null;
     }
 
-    async create(productData: Omit<Product, "id">): Promise<Product> {
-        const newProduct: Product = {
-            id: uuid(),
-            ...productData,
-        };
+    async create(product: Product): Promise<Product> {
+       product.id = uuid();
+       await this.dbClient
+           .put({
+               TableName: this.productsTable,
+               Item: product,
+           })
+           .promise();
 
-        await this.dbClient
-            .put({
-                TableName: this.productsTable,
-                Item: newProduct,
-            })
-            .promise();
-
-        return newProduct;
+       return product;
     }
 }
