@@ -60,4 +60,26 @@ export class ProductRepository {
         }
         throw new Error(`Product with id ${id} not found`);
     }
+
+    async updateProduct(id: string, product: Partial<Product>): Promise<Product> {
+        const data = await this.dbClient.update({
+            TableName: this.productsTable,
+            Key: { id },
+            ConditionExpression: "attribute_exists(id)",
+            ReturnValues: "UPDATE_NEW",
+            UpdateExpression: `set ${Object.keys(product)
+                .map((key, index) => `#key${index} = :value${index}`)
+                .join(", ")}`,
+            ExpressionAttributeNames: Object.keys(product).reduce((acc, key, index) => {
+                acc[`#key${index}`] = key;
+                return acc;
+            }, {} as { [key: string]: string }),
+            ExpressionAttributeValues: Object.keys(product).reduce((acc, key, index) => {
+                acc[`:value${index}`] = (product as any)[key];
+                return acc;
+            }, {} as { [key: string]: any }),
+    }).promise();
+      data.Attributes!.id = id;
+      return data.Attributes as Product;
+    }
 }
