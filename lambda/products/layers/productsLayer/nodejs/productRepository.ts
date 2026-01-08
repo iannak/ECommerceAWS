@@ -45,4 +45,19 @@ export class ProductRepository {
 
        return product;
     }
+
+    async deleteProduct(id: string): Promise<Product> {
+        const data = await this.dbClient
+            .delete({
+                TableName: this.productsTable,
+                Key: { id },
+                ReturnValues: "ALL_OLD",
+            })
+            .promise();
+
+        if(data.Attributes) {
+            return data.Attributes as Product;
+        }
+        throw new Error(`Product with id ${id} not found`);
+    }
 }
