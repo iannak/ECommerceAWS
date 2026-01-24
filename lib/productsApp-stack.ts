@@ -48,7 +48,7 @@ export class ProductsAppStack extends cdk.Stack {
         functionName: "ProductsEventsFunction",
         entry: "lambda/products/productsEventsFunction.ts",
         handler: "handler",
-        memorySize: 128,
+        memorySize: 512,
         runtime: lambda.Runtime.NODEJS_18_X,
         timeout: cdk.Duration.seconds(2),
         bundling: {
