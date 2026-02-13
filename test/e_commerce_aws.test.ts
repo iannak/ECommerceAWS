@@ -1,4 +1,4 @@
-// import * as cdk from 'aws-cdk-lib/core';
+// import * as cdk from 'aws-cdk-lib';
 // import { Template } from 'aws-cdk-lib/assertions';
 // import * as ECommerceAws from '../lib/e_commerce_aws-stack';
 
