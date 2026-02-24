@@ -5,6 +5,7 @@ import * as AWSXRay from "aws-xray-sdk"
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda"
 import { CarrierType, OrderProductResponse, OrderRequest, OrderResponse, PaymentType, ShippingType } from "/opt/nodejs/ordersApiLayer"
 import { OrderEvent, OrderEventType, Envelope } from '/opt/nodejs/orderEventsLayer'
+import { v4 as uuid } from "uuid"
 
 AWSXRay.captureAWS(require("aws-sdk"))
 
@@ -70,16 +71,19 @@ export async function handler(event: APIGatewayProxyEvent, context: Context):
       const products = await productRepository.getProductsByIds(orderRequest.productIds)
       if (products.length === orderRequest.productIds.length) {
          const order = buildOrder(orderRequest, products)
-         const orderCreated = await orderRepository.createOrder(order)
+         const orderCreatedPromise = orderRepository.createOrder(order)
 
-         const eventResult = await sendOrderEvent(orderCreated, OrderEventType.CREATED, lambdaRequestId)
+         const eventResultPromise = sendOrderEvent(order, OrderEventType.CREATED, lambdaRequestId)
+
+         const results = await Promise.all([orderCreatedPromise, eventResultPromise])
+
          console.log(
-            `Order created event sent - OrderId: ${orderCreated.sk} 
-            - MessageId: ${eventResult.MessageId}`
+            `Order created event sent - OrderId: ${order.sk} 
+            - MessageId: ${results[1].MessageId}`
          )
          return {
             statusCode: 201,
-            body: JSON.stringify(convertToOrderResponse(orderCreated))
+            body: JSON.stringify(convertToOrderResponse(order))
          }
       } else {
          return {
@@ -141,7 +145,13 @@ function sendOrderEvent(order: Order, eventType: OrderEventType, lambdaRequestId
 
    return snsClient.publish({
       TopicArn: orderEventsTopicArn,
-      Message: JSON.stringify(envelope)
+      Message: JSON.stringify(envelope),
+      MessageAttributes: {
+         eventType: {
+            DataType: "String",
+            StringValue: eventType
+         }
+      }
    }).promise()
 }
 
@@ -184,6 +194,8 @@ function buildOrder(orderRequest: OrderRequest, products: Product[]): Order {
    })
    const order: Order = {
       pk: orderRequest.email,
+      sk: uuid(),
+      createdAt: Date.now(),
       billing: {
          payment: orderRequest.payment,
          totalPrice: totalPrice
