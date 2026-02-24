@@ -42,7 +42,7 @@ export class OrderRepository {
 
    async getAllOrders(): Promise<Order[]> {
       const data = await this.ddbClient.scan({
-         TableName: this.ordersDdb
+         TableName: this.ordersDdb,
       }).promise()
       return data.Items as Order[]
    }
@@ -53,7 +53,7 @@ export class OrderRepository {
          KeyConditionExpression: "pk = :email",
          ExpressionAttributeValues: {
             ":email": email
-         }
+         },         
       }).promise()
       return data.Items as Order[]
    }
@@ -64,7 +64,7 @@ export class OrderRepository {
          Key: {
             pk: email,
             sk: orderId
-         }
+         },
       }).promise()
       if (data.Item) {
          return data.Item as Order
